@@ -1,13 +1,12 @@
 import pytest
+import numpy as np
 import os
 from dotenv import load_dotenv
 from unittest.mock import patch
 from ShowSuggesterAI import load_tv_shows, get_embeddings, save_embeddings, load_embeddings
 from closest_match_show import match_shows
+from show_recommendation import calculate_average_vector, recommend_shows
 
-# Simple test to ensure pytest is running correctly
-def test_example():
-    assert 1 == 1
 
 ### Test ShowSuggesterAI.py
     
@@ -98,3 +97,33 @@ def test_match_shows_partial_matches():
     assert match_shows(input_shows, known_shows) == expected_output
 
    
+### Test show_recommendation.py    
+
+def test_calculate_average_vector():
+    embeddings = {
+        "Show1": np.array([1, 2, 3]),
+        "Show2": np.array([4, 5, 6]),
+        "Show3": np.array([7, 8, 9])
+    }
+    shows = ["Show1", "Show2"]
+    expected_average = np.array([2.5, 3.5, 4.5])
+    np.testing.assert_array_equal(calculate_average_vector(shows, embeddings), expected_average)
+
+def test_recommend_shows():
+    embeddings = {
+        "Show1": np.array([1, 2, 3]),
+        "Show2": np.array([4, 5, 6]),
+        "Show3": np.array([7, 8, 9]),
+        "Show4": np.array([1, 3, 5]),
+        "Show5": np.array([6, 7, 8]),
+        "Show6": np.array([2, 4, 6])
+    }
+    user_shows = ["Show1", "Show2"]
+    all_shows = list(embeddings.keys())
+    recommendations = recommend_shows(user_shows, all_shows, embeddings)
+    
+    # Check if the recommendations are at most 5 and user's shows are not in recommendations
+    assert len(recommendations) <= 5
+    assert all(show not in user_shows for show in recommendations.keys())
+
+
