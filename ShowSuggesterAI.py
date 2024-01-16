@@ -1,6 +1,8 @@
 import csv
 import pickle
 import os
+import time
+##from openai import OpenAI
 import openai
 import logging
 from dotenv import load_dotenv
@@ -26,18 +28,24 @@ def load_tv_shows(csv_file):
        
 
 def get_embeddings(show_descriptions, api_key):
-    if not api_key:
-        raise ValueError("API key is missing")
-    
     openai.api_key = api_key
+
     embeddings = {}
+    request_count = 0
+
     for title, description in show_descriptions.items():
         try:
             response = openai.Embedding.create(
-                input=description,
-                model="text-similarity-babbage-001"  # You can choose a different model if needed
+                model="text-embedding-ada-002",
+                input=[description] 
             )
             embeddings[title] = response['data'][0]['embedding']
+            request_count += 1
+
+            # Add a delay every 3 requests
+            if request_count % 3 == 0:
+                time.sleep(20)
+
         except Exception as e:
             logging.error(f"Error fetching embeddings for {title}: {e}")
             raise    
@@ -56,10 +64,15 @@ def load_embeddings(filepath):
     if not os.path.exists(filepath):
         logging.info(f"Embeddings file not found: {filepath}")
         return None
-
+    if os.path.getsize(filepath) == 0:
+        logging.error(f"Embeddings file is empty: {filepath}")
+        return None
     try:
         with open(filepath, 'rb') as file:
             return pickle.load(file)
+    except EOFError:
+        logging.error(f"Embeddings file is corrupted or empty: {filepath}")
+        return None    
     except Exception as e:
         logging.error(f"Error loading embeddings from file: {e}")
         raise
@@ -75,7 +88,7 @@ def main():
         logging.error("API Key not found. Please set API_KEY in your environment.")
         return
     
-    csv_file_path = '/Users/yonathanallouch/Desktop/HW2 software/EX2-Embedding/imdb_tvshows.csv'  # Replace with your actual CSV file path
+    csv_file_path = '/Users/yonathanallouch/Desktop/HW2 software/EX2-Embedding/imdb_tvshows.csv'  
     pickle_file_path = 'embeddings.pkl'
 
     # Try to load embeddings from the pickle file
