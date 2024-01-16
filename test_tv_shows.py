@@ -3,11 +3,14 @@ import os
 from dotenv import load_dotenv
 from unittest.mock import patch
 from ShowSuggesterAI import load_tv_shows, get_embeddings, save_embeddings, load_embeddings
+from closest_match_show import match_shows
 
 # Simple test to ensure pytest is running correctly
 def test_example():
     assert 1 == 1
 
+### Test ShowSuggesterAI.py
+    
 # Fixture for the CSV file path
 @pytest.fixture
 def tv_shows_csv():
@@ -54,3 +57,44 @@ def test_no_api_call_if_embeddings_saved(mock_get_embeddings, tv_shows_csv, tmpd
     # Load embeddings and check that get_embeddings was not called
     load_embeddings(tmpdir / "embeddings.pkl")
     mock_get_embeddings.assert_not_called()
+
+
+### Test closest_match_show.py
+def test_match_shows():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = ["gem of throns", "lupan", "witcher"]
+    expected_output = ["Game of Thrones", "Lupin", "The Witcher"]
+    assert match_shows(input_shows, known_shows) == expected_output
+
+def test_match_shows_empty_input():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = []
+    expected_output = []
+    assert match_shows(input_shows, known_shows) == expected_output
+
+def test_match_shows_no_match():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = ["Random Show", "Another Show"]
+    # The function now correctly returns the input string if no match is found
+    assert match_shows(input_shows, known_shows, threshold=60) == input_shows
+
+def test_match_shows_special_characters():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = ["Game@of Thrones", "Lupin!"]
+    expected_output = ["Game of Thrones", "Lupin"]
+    assert match_shows(input_shows, known_shows) == expected_output
+
+def test_match_shows_case_insensitivity():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = ["game of thrones", "LUPIN"]
+    expected_output = ["Game of Thrones", "Lupin"]
+    assert match_shows(input_shows, known_shows) == expected_output
+
+def test_match_shows_partial_matches():
+    known_shows = ["Game of Thrones", "Lupin", "The Witcher"]
+    input_shows = ["Game", "Witch"]
+    # Assuming the function returns the closest match for partial strings
+    expected_output = ["Game of Thrones", "The Witcher"]
+    assert match_shows(input_shows, known_shows) == expected_output
+
+   
