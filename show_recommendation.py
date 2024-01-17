@@ -2,7 +2,7 @@ import pickle
 from fuzzywuzzy import process
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from closest_match_show import match_shows, get_favorite_tv_shows
+
 
 def load_embeddings(file_path):
     with open(file_path, 'rb') as file:
@@ -21,16 +21,10 @@ def recommend_shows(user_shows, all_shows, embeddings):
     max_similarity = max(similarities.values(),default=1)
     recommendations = {show: round((similarities[show] / max_similarity) * 100) 
                        for show in top_shows}
+    print("Recommended TV Shows:")
+    for show, score in recommendations.items():
+        print(f"{show} ({score}%)")
     return recommendations
 
 # Load embeddings
-embeddings = load_embeddings('embeddings.pkl')
-'''
-# Get user input
-known_shows = list(embeddings.keys())
-user_shows = get_favorite_tv_shows(known_shows)
-recommended_shows = recommend_shows(user_shows, known_shows, embeddings)
-
-for show, score in recommended_shows.items():
-    print(f"{show} ({score}%)")
-'''
+#embeddings = load_embeddings('embeddings.pkl')

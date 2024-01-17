@@ -8,9 +8,6 @@ tv_shows_df = pd.read_csv(file_path)
 # Extract the list of known shows from the CSV file
 known_shows = tv_shows_df['Title'].tolist()
 
-from fuzzywuzzy import process
-import pandas as pd
-
 def match_shows(input_shows, known_shows, threshold=60):
     """ Matches input shows with known shows using fuzzy matching. """
     matched_shows = []
@@ -39,5 +36,4 @@ def get_favorite_tv_shows(known_shows):
         else:
             print("Please enter more than one TV show.")
 
-# Example usage
-'''favorite_shows = get_favorite_tv_shows()'''
+

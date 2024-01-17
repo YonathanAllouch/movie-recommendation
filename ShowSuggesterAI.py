@@ -1,10 +1,13 @@
 import csv
+import re
 import pickle
 import os
-import time
 import openai
 import logging
 from dotenv import load_dotenv
+from closest_match_show import get_favorite_tv_shows
+from show_recommendation import recommend_shows
+from generate_TV_show import generate_show_description, generate_show_image, save_and_open_image    
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -85,13 +88,30 @@ def load_embeddings(filepath):
         logging.error(f"Error loading embeddings from file: {e}")
         raise
 
+def parse_show_details(text):
+    # Regex pattern to match "title : description"
+    pattern = r'(.+?)\s*:\s*(.+)'
+
+    # Search for the pattern in the text
+    match = re.search(pattern, text)
+
+    # Check if match is found
+    if match:
+        title = match.group(1).strip() + '"'
+        description = '"' + match.group(2).strip()
+        return title, description
+    else:
+        # Return a default value or handle the error as needed
+        return None, None
+
 
 
 
 def main():
     # File paths
     load_dotenv()
-    api_key = os.getenv('API_KEY')  
+    # Load the API key from the environment variable
+    api_key = os.getenv('OPENAI_API_KEY')  
     if not api_key:
         logging.error("API Key not found. Please set API_KEY in your environment.")
         return
@@ -109,6 +129,33 @@ def main():
             save_embeddings(embeddings, pickle_file_path)
     except Exception as e:
         logging.error(f"An error occurred: {e}")     
+
+    # Get user input
+    known_shows = list(embeddings.keys())
+     # Step 1: Get user's favorite shows
+    favorite_shows = get_favorite_tv_shows(known_shows)
+
+    # Step 2: Generate recommendations
+    recommended_shows = recommend_shows(favorite_shows, known_shows, embeddings)
+
+    # Steps 3 & 4: Generate and parse descriptions for new shows
+    description_show_create = generate_show_description("user's favorite", favorite_shows)
+    recommended_based_show = generate_show_description("my recommendations", recommended_shows)
+    title1, description1 = parse_show_details(description_show_create)
+    title2, description2 = parse_show_details(recommended_based_show)
+
+    # Step 5: Generate images for new shows
+    image_show_create_url = generate_show_image(description_show_create)
+    recommended_show_image_url = generate_show_image(recommended_based_show)
+
+    # Step 6: Display show details and save images
+    print(f"I have also created just for you two shows which I think you would love. "
+          f"Show #1, based on your favorites, is '{title1}' and it is about {description1}. "
+          f"Show #2, based on my recommendations, is '{title2}' and it is about {description2}.\n"
+          f"Here are also the 2 TV show ads. Hope you like them!")
+
+    save_and_open_image(image_show_create_url, "show_create.png")
+    save_and_open_image(recommended_show_image_url, "recommended_show.png")
 
 if __name__ == "__main__":
     main()
