@@ -26,5 +26,3 @@ def recommend_shows(user_shows, all_shows, embeddings):
         print(f"{show} ({score}%)")
     return recommendations
 
-# Load embeddings
-#embeddings = load_embeddings('embeddings.pkl')

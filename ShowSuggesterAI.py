@@ -2,12 +2,12 @@ import csv
 import re
 import pickle
 import os
-import openai
+from openai import OpenAI
 import logging
 from dotenv import load_dotenv
 from closest_match_show import get_favorite_tv_shows
 from show_recommendation import recommend_shows
-from generate_TV_show import generate_show_description, generate_show_image, save_and_open_image    
+from generate_TV_show import generate_show_description, generate_show_image, save_and_open_image , describe_picture_for_story    
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,8 +29,7 @@ def load_tv_shows(csv_file):
     return shows
        
 
-def get_embeddings(show_descriptions, api_key, batch_size=200):
-    openai.api_key = api_key
+def get_embeddings(show_descriptions, batch_size=200):
 
     embeddings = {}
     descriptions_batch = []
@@ -43,7 +42,7 @@ def get_embeddings(show_descriptions, api_key, batch_size=200):
     
     if len(descriptions_batch) == batch_size or title == list(show_descriptions.keys())[-1]:
         try:
-            response = openai.Embedding.create(
+            response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=descriptions_batch
             )
@@ -105,17 +104,16 @@ def parse_show_details(text):
         return None, None
 
 
-
+# Load the API key from the environment variable
+try: 
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+except Exception as e:
+    print(f"An error occurred: {e}")
+    raise   
 
 def main():
     # File paths
-    load_dotenv()
-    # Load the API key from the environment variable
-    api_key = os.getenv('OPENAI_API_KEY')  
-    if not api_key:
-        logging.error("API Key not found. Please set API_KEY in your environment.")
-        return
-    
+    load_dotenv()    
     csv_file_path = '/Users/yonathanallouch/Desktop/HW2 software/EX2-Embedding/imdb_tvshows.csv'  
     pickle_file_path = 'embeddings.pkl'
 
@@ -125,7 +123,7 @@ def main():
         # If embeddings are not found, read the TV shows and get embeddings
         if embeddings is None:
             shows = load_tv_shows(csv_file_path)
-            embeddings = get_embeddings(shows, api_key)
+            embeddings = get_embeddings(shows, client)
             save_embeddings(embeddings, pickle_file_path)
     except Exception as e:
         logging.error(f"An error occurred: {e}")     
@@ -144,15 +142,17 @@ def main():
     title1, description1 = parse_show_details(description_show_create)
     title2, description2 = parse_show_details(recommended_based_show)
 
+    convert_description_to_picture1 = describe_picture_for_story(description_show_create)
+    convert_description_to_picture2 = describe_picture_for_story(recommended_based_show)
     # Step 5: Generate images for new shows
-    image_show_create_url = generate_show_image(description_show_create)
-    recommended_show_image_url = generate_show_image(recommended_based_show)
+    image_show_create_url = generate_show_image(convert_description_to_picture1)
+    recommended_show_image_url = generate_show_image(convert_description_to_picture2)
 
     # Step 6: Display show details and save images
     print(f"I have also created just for you two shows which I think you would love. "
-          f"Show #1, based on your favorites, is '{title1}' and it is about {description1}. "
-          f"Show #2, based on my recommendations, is '{title2}' and it is about {description2}.\n"
-          f"Here are also the 2 TV show ads. Hope you like them!")
+        f"Show #1, based on your favorites, is '{title1}' and it is about {description1}. "
+        f"Show #2, based on my recommendations, is '{title2}' and it is about {description2}.\n"
+        f"Here are also the 2 TV show ads. Hope you like them!")
 
     save_and_open_image(image_show_create_url, "show_create.png")
     save_and_open_image(recommended_show_image_url, "recommended_show.png")
