@@ -7,7 +7,7 @@ import logging
 from dotenv import load_dotenv
 from closest_match_show import get_favorite_tv_shows
 from show_recommendation import recommend_shows
-from generate_TV_show import generate_show_description, generate_show_image, save_and_open_image , describe_picture_for_story    
+from generate_TV_show import generate_show_description, generate_show_image, save_and_open_image    
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -142,11 +142,9 @@ def main():
     title1, description1 = parse_show_details(description_show_create)
     title2, description2 = parse_show_details(recommended_based_show)
 
-    convert_description_to_picture1 = describe_picture_for_story(description_show_create)
-    convert_description_to_picture2 = describe_picture_for_story(recommended_based_show)
     # Step 5: Generate images for new shows
-    image_show_create_url = generate_show_image(convert_description_to_picture1)
-    recommended_show_image_url = generate_show_image(convert_description_to_picture2)
+    image_show_create_url = generate_show_image(title1, description1)
+    recommended_show_image_url = generate_show_image(title2, description2)
 
     # Step 6: Display show details and save images
     print(f"I have also created just for you two shows which I think you would love. "
