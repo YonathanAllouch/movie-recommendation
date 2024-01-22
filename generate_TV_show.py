@@ -11,7 +11,7 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 def generate_show_description(basis, shows):
-    prompt = f"Create a name and a description (your Prompt must be length 500 characters or less.) for a new TV show based on the following {basis} shows: {', '.join(shows)}. Present you reponse in this format 'the name you choose : the description you write'"
+    prompt = f"Create a name and a description for a new TV show based on the following {basis} shows: {', '.join(shows)}. Present you reponse in this format 'the name you choose : the description you write'"
     response = client.chat.completions.create(model="gpt-3.5-turbo",
     messages=[
     {"role": "system", "content": "You are a TV show writer."},
@@ -29,10 +29,12 @@ def generate_show_image(title , description, retries=3, delay=60):
     for attempt in range(retries):
         try:
             response = client.images.generate(
-            prompt=prompt,
-            size="1024x1024",   
-            quality = "hd",
-            n=1)
+                model="dall-e-3",
+                prompt=prompt,
+                size="1024x1024",   
+                quality = "standard",
+                n=1
+            )
             return response.data[0].url
         except openai.RateLimitError as e :
             if attempt < retries - 1:
@@ -56,13 +58,3 @@ def save_and_open_image(image_url, filename):
     except requests.exceptions.RequestException as e:
         print(f"Request failed: {e}")
 
-'''
-# Example usage
-basis = "comedy"
-shows = ["Friends", "The Office", "Parks and Recreation"]
-description = generate_show_description(basis, shows)
-print("Show Description:", description)
-
-title = "New Amazing Comedy Show"
-image_url = generate_show_image(title, description)
-print("Image URL:", image_url)'''

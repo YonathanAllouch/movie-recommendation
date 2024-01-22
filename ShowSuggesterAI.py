@@ -29,7 +29,7 @@ def load_tv_shows(csv_file):
     return shows
        
 
-def get_embeddings(show_descriptions, batch_size=200):
+def get_embeddings(show_descriptions,client , batch_size=200):
 
     embeddings = {}
     descriptions_batch = []
@@ -40,25 +40,22 @@ def get_embeddings(show_descriptions, batch_size=200):
         titles_batch.append(title)
         # Once batch size is reached, or end of descriptions is reached, make the API call
     
-    if len(descriptions_batch) == batch_size or title == list(show_descriptions.keys())[-1]:
-        try:
-            response = client.embeddings.create(
-                model="text-embedding-ada-002",
-                input=descriptions_batch
-            )
-            for i, embedding in enumerate(response['data']):
-                embeddings[titles_batch[i]] = embedding['embedding']
-                
+        if len(descriptions_batch) == batch_size or title == list(show_descriptions.keys())[-1]:
+            try:
+                response = client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=descriptions_batch
+                )
+                for i, embedding_response in enumerate(response.data):
+                        embeddings[titles_batch[i]] = embedding_response.embedding
+                        
                 # Reset the batches
-            descriptions_batch = []
-            titles_batch = []
+                descriptions_batch = []
+                titles_batch = []
 
-                # Wait 60 seconds to respect the rate limit
-                #time.sleep(60)
-
-        except Exception as e:
-            logging.error(f"Error fetching embeddings for {title}: {e}")
-            raise    
+            except Exception as e:
+                logging.error(f"Error fetching embeddings for {title}: {e}")
+                raise    
 
     return embeddings
 
